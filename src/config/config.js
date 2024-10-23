@@ -4,6 +4,7 @@ import MainMenuScene from '../scenes/MainMenu.js';
 import CrimeScene from '../scenes/CrimeScene.js';
 import InventoryScene from '../scenes/Inventory.js';
 import GameOverScene from '../scenes/GameOver.js';
+import MuseumScene from '../scenes/MuseumDirector.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -27,7 +28,8 @@ const config = {
         MainMenuScene,
         CrimeScene,
         InventoryScene,
-        GameOverScene
+        GameOverScene,
+        MuseumScene,
     ]
 };
 

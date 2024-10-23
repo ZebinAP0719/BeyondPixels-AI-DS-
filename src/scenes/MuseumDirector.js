@@ -1,15 +1,17 @@
-import SCENES from '../config/gameConstants.js';
+import SCENES from "../config/gameConstants.js";
 
 var cursors;
 
-class CrimeScene extends Phaser.Scene {
+class MuseumScene extends Phaser.Scene {
     constructor() {
-        super({ key: SCENES.CRIME_SCENE });
-        this.evidence = [];
-        cursors = null;
+        super({ key: SCENES.MUSEUM_SCENE});
     }
 
     preload() {
+        this.load.spritesheet('director', 'assets/images/characters/museum_director.png', {
+            frameWidth: 128,
+            frameHeight: 128
+        });
         this.load.spritesheet('character', 'assets/images/characters/detective.png', {
             frameWidth: 128, // Width of each frame
             frameHeight: 128 // Height of each frame
@@ -17,7 +19,6 @@ class CrimeScene extends Phaser.Scene {
     }
 
     create() {
-        // Add background
         this.add.image(0, 0, 'crime-scene-bg').setOrigin(0);
 
         const floor = this.physics.add.staticGroup();
@@ -31,6 +32,13 @@ class CrimeScene extends Phaser.Scene {
         for (let i = 0; i <= numPlatforms; i++) {
             floor.create(i * platformWidth, 501, 'museum-floor-platform').setScale(1).refreshBody();
         }
+
+        this.anims.create({
+            key: 'director_idle',
+            frames: this.anims.generateFrameNumbers('director', { start: 0, end: 13 }),
+            frameRate: 10,
+            repeat: -1
+        });
 
         this.anims.create({
             key: 'left',
@@ -48,32 +56,35 @@ class CrimeScene extends Phaser.Scene {
 
         this.anims.create({
             key: 'right',
-            frames: this.anims.generateFrameNumbers('character', { start: 23, end: 33}),
+            frames: this.anims.generateFrameNumbers('character', { start: 10, end: 19 }),
             frameRate: 15,
             repeat: -1
         });
     
         // Create the character sprite
         this.player = this.physics.add.sprite(100, 200, 'character'); // Make sure sprite key matches
+        this.director = this.physics.add.sprite(800, 200, 'director');
     
         // Ensure the sprite has proper scaling and physics properties
         this.player.setScale(3);
-        this.player.setCollideWorldBounds(true); // Ensure character doesn't go off-screen
+        this.director.setScale(3);
+
+        this.player.setCollideWorldBounds(true);
+        this.director.setCollideWorldBounds(true)
     
         // Enable arrow key inputs
         cursors = this.input.keyboard.createCursorKeys();
 
-        this.physics.add.collider(this.player, floor)
+        this.physics.add.collider(this.player, floor);
+        this.physics.add.collider(this.director, floor);
     
         // Initialize UI
         this.createUI();
     }
 
     update() {
-        if (this.player.x > 600) {
-            this.scene.start(SCENES.MUSEUM_SCENE);
-        } 
-        // Check for left/right movement
+        this.director.anims.play('director_idle', true);
+
         if (cursors.left.isDown) {
             this.player.setVelocityX(-160);
             this.player.anims.play('left', true);
@@ -94,6 +105,10 @@ class CrimeScene extends Phaser.Scene {
             fill: '#fff'
         });
     }
+
+    talkToDirector() {
+
+    }
 }
 
-export default CrimeScene;
+export default MuseumScene;
