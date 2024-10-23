@@ -1,3 +1,4 @@
+var clickSound, collectionSound, portalSound;
 class MenuScene extends Phaser.Scene {
     constructor() {
         super({ key: 'MenuScene' });
@@ -5,10 +6,14 @@ class MenuScene extends Phaser.Scene {
 
     preload() {
         // Load assets for the menu screen
-        this.load.image('background', 'assets/menu-background.png');
-        this.load.image('startButton', 'assets/start-button.png');
-        this.load.image('optionsButton', 'assets/options-button.png');
-        this.load.image('quitButton', 'assets/quit-button.png');
+        this.load.image('background', 'assets/images/menu-background.png');
+        this.load.image('startButton', 'assets/images/start-button.png');
+        this.load.image('optionsButton', 'assets/images/options-button.png');
+        this.load.image('quitButton', 'assets/images/quit-button.png');
+
+        this.load.audio('clickSound', 'assets/audio/click.mp3');
+        this.load.audio('collectionSound', 'assets/audio/collect.mp3');
+        this.load.audio('portalSound', 'assets/audio/portal.mp3');
     }
 
     create() {
@@ -16,6 +21,8 @@ class MenuScene extends Phaser.Scene {
         this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, 'background')
             .setScale(1.5)
             .setOrigin(0.5);
+        
+        clickSound = this.sound.add('clickSound', { volume: 1, loop: true });
 
         // Game title
         this.add.text(this.cameras.main.centerX, this.cameras.main.centerY - 150, 'BeyondPixels-AI-DS', {
@@ -28,6 +35,7 @@ class MenuScene extends Phaser.Scene {
         const startButton = this.add.image(this.cameras.main.centerX, this.cameras.main.centerY, 'startButton')
             .setInteractive()
             .on('pointerdown', () => {
+                clickSound.play();
                 this.scene.start('GameScene'); // Switch to the game scene
             });
 
@@ -36,6 +44,7 @@ class MenuScene extends Phaser.Scene {
             .setInteractive()
             .on('pointerdown', () => {
                 // Open the options scene
+                clickSound.play();
                 this.scene.start('OptionsScene');
             });
 
@@ -44,6 +53,7 @@ class MenuScene extends Phaser.Scene {
             .setInteractive()
             .on('pointerdown', () => {
                 // Quit the game (can handle differently in browser context)
+                clickSound.play();
                 this.game.destroy(true);
             });
 
@@ -80,7 +90,7 @@ class OptionsScene extends Phaser.Scene {
 // Phaser game configuration
 const config = {
     type: Phaser.AUTO,
-    width: 800,
+    width: 1000,
     height: 600,
     scene: [MenuScene, GameScene, OptionsScene],
     physics: {
