@@ -6,6 +6,7 @@ const SCENES = {
   INVENTORY: 'InventoryScene',
   GAME_OVER: 'GameOverScene',
   MUSEUM_SCENE: 'MuseumScene',
+  MUSEUM_THEFT: 'MuseumTheft',
 };
 
 export default SCENES;

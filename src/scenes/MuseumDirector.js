@@ -7,13 +7,17 @@ class MuseumScene extends Phaser.Scene {
         super({ key: SCENES.MUSEUM_SCENE });
         this.dialogDisplayed = false; // Ensure dialog appears only once
         this.textFlag = false; // To control when the game should pause for dialog
+<<<<<<< HEAD
         this.currentDialogueIndex = 0; // Track the current dialog index
         this.typingEvent = null; // To track the text animation event
         this.isTyping = false; // To know if text is currently animating
+=======
+        this.endSceneFlag = false;
+>>>>>>> e671071e7c2ede302fa12a39f74201f2fc3d0c8c
     }
 
     preload() {
-        this.load.spritesheet('director', 'assets/images/characters/museum_director.png', {
+        this.load.spritesheet('director_new', 'assets/images/characters/museum_director.png', {
             frameWidth: 128,
             frameHeight: 128
         });
@@ -42,7 +46,7 @@ class MuseumScene extends Phaser.Scene {
 
         this.anims.create({
             key: 'director_idle',
-            frames: this.anims.generateFrameNumbers('director', { start: 0, end: 13 }),
+            frames: this.anims.generateFrameNumbers('director_new', { start: 0, end: 13 }),
             frameRate: 10,
             repeat: -1
         });
@@ -69,7 +73,7 @@ class MuseumScene extends Phaser.Scene {
         });
     
         this.player = this.physics.add.sprite(100, 200, 'character');
-        this.director = this.physics.add.sprite(800, 200, 'director');
+        this.director = this.physics.add.sprite(800, 200, 'director_new');
     
         this.player.setScale(3);
         this.director.setScale(3);
@@ -115,15 +119,21 @@ class MuseumScene extends Phaser.Scene {
     }
 
     update() {
-        if (this.textFlag) {
-            pauseFlag = true;
-        } else {
-            pauseFlag = false;
-        }
 
         this.director.anims.play('director_idle', true);
 
+<<<<<<< HEAD
         if (this.aKey.isDown && !pauseFlag) {
+=======
+        // Trigger dialog when player is near the director and dialog hasn't been displayed yet
+        if (Math.abs(this.director.x - this.player.x) <= 150 && !this.dialogDisplayed) {
+            this.dialogDisplayed = true;
+            this.createDialogBox();
+            pauseFlag = true;
+        }
+
+        if (cursors.left.isDown && !pauseFlag) {
+>>>>>>> e671071e7c2ede302fa12a39f74201f2fc3d0c8c
             this.player.setVelocityX(-160);
             this.player.anims.play('left', true);
         } else if (this.dKey.isDown && !pauseFlag) {
@@ -171,9 +181,8 @@ class MuseumScene extends Phaser.Scene {
             this.typeText(textObject, dialogContent, 50);
 
         } else {
-            // End of dialog sequence
-            this.textFlag = false;
-            pauseFlag = false; // Resume the game after the dialog ends
+            this.dialogDisplayed = false;
+            this.endScene();
         }
     }
 
@@ -228,6 +237,7 @@ class MuseumScene extends Phaser.Scene {
         });
     }
 
+<<<<<<< HEAD
     changeBackgroundAndAudio() {
         // Check if bg exists before trying to change its texture
         if (this.bg) {
@@ -246,6 +256,14 @@ class MuseumScene extends Phaser.Scene {
         this.newAudio.play({ loop: true });
     }
     
+=======
+    endScene() {
+        this.cameras.main.fadeOut(1000); 
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+            this.scene.start(SCENES.MUSEUM_THEFT);  // Transition to next scene
+        });
+    }
+>>>>>>> e671071e7c2ede302fa12a39f74201f2fc3d0c8c
 }
 
 export default MuseumScene;
