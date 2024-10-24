@@ -1,19 +1,17 @@
 import SCENES from '../config/gameConstants.js';
 
-var cursors;
 var pauseFlag = false;
 
 class CrimeScene extends Phaser.Scene {
     constructor() {
         super({ key: SCENES.CRIME_SCENE });
         this.evidence = [];
-        cursors = null;
     }
 
     preload() {
         this.load.spritesheet('character', 'assets/images/characters/detective.png', {
-            frameWidth: 128, // Width of each frame
-            frameHeight: 128 // Height of each frame
+            frameWidth: 128,
+            frameHeight: 128
         });
 
         this.load.image('dialogBox', 'assets/images/ui/dialogBox.png');
@@ -60,17 +58,17 @@ class CrimeScene extends Phaser.Scene {
         });
     
         // Create the character sprite
-        this.player = this.physics.add.sprite(100, 200, 'character'); // Make sure sprite key matches
-    
-        // Ensure the sprite has proper scaling and physics properties
+        this.player = this.physics.add.sprite(100, 200, 'character');
         this.player.setScale(3);
-        this.player.setCollideWorldBounds(true); // Ensure character doesn't go off-screen
+        this.player.setCollideWorldBounds(true);
     
-        // Enable arrow key inputs
-        cursors = this.input.keyboard.createCursorKeys();
+        // Enable WASD keys
+        this.wKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+        this.aKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+        this.sKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+        this.dKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
 
         this.physics.add.collider(this.player, floor);
-
         this.cameras.main.fadeIn(1000);
     
         // Initialize UI
@@ -98,15 +96,15 @@ class CrimeScene extends Phaser.Scene {
                 this.scene.start(SCENES.MUSEUM_SCENE);  // Transition to next scene
             });
         } 
-        // Check for left/right movement
-        if (cursors.left.isDown && !pauseFlag) {
+
+        // Check for WASD movement
+        if (this.aKey.isDown && !pauseFlag) {
             this.player.setVelocityX(-160);
             this.player.anims.play('left', true);
-        } else if (cursors.right.isDown && !pauseFlag) {
+        } else if (this.dKey.isDown && !pauseFlag) {
             this.player.setVelocityX(160);
             this.player.anims.play('right', true);
         } else {
-            // If no key is pressed, stop the animation
             this.player.setVelocityX(0);
             this.player.anims.play('detective_idle', true);
         }
@@ -124,7 +122,7 @@ class CrimeScene extends Phaser.Scene {
         this.add.image(120, 460, 'dialogBox').setOrigin(0);
 
         const dialogText = this.add.text(130, 470, '', { font: "15px", fill: "#000", wordWrap: { width: 460, useAdvancedWrap: true } });
-        const dialogContent = "I am here at the Museum, I wonder why the Director called me here?. Maybe it's something Important!";
+        const dialogContent = "I am here at the Museum, now to inform the director about the problem!";
 
         this.typeText(dialogText, dialogContent, 25);
 

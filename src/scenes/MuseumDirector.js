@@ -1,6 +1,5 @@
 import SCENES from "../config/gameConstants.js";
 
-var cursors;
 var pauseFlag = false;
 
 class MuseumScene extends Phaser.Scene {
@@ -8,6 +7,9 @@ class MuseumScene extends Phaser.Scene {
         super({ key: SCENES.MUSEUM_SCENE });
         this.dialogDisplayed = false; // Ensure dialog appears only once
         this.textFlag = false; // To control when the game should pause for dialog
+        this.currentDialogueIndex = 0; // Track the current dialog index
+        this.typingEvent = null; // To track the text animation event
+        this.isTyping = false; // To know if text is currently animating
     }
 
     preload() {
@@ -21,11 +23,13 @@ class MuseumScene extends Phaser.Scene {
         });
 
         this.load.image('dialogBox', 'assets/images/ui/dialogBox.png');
+        this.load.image('crime-scene-alert', 'assets/images/ui/crime-scene-alert.png'); // New background image
+        this.load.audio('new-music', 'assets/audio/new-audio.mp3'); // New audio file
     }
 
     create() {
-        this.add.image(0, 0, 'crime-scene-bg').setOrigin(0);
 
+        this.bg = this.add.image(0, 0, 'crime-scene-bg').setOrigin(0);
         const floor = this.physics.add.staticGroup();
         const platformWidth = this.textures.get('museum-floor-platform').getSourceImage().width;
 
@@ -73,7 +77,11 @@ class MuseumScene extends Phaser.Scene {
         this.player.setCollideWorldBounds(true);
         this.director.setCollideWorldBounds(true);
     
-        cursors = this.input.keyboard.createCursorKeys();
+        // Create WASD keys
+        this.wKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+        this.aKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+        this.sKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+        this.dKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
 
         this.physics.add.collider(this.player, floor);
         this.physics.add.collider(this.director, floor);
@@ -81,6 +89,29 @@ class MuseumScene extends Phaser.Scene {
         this.cameras.main.fadeIn(1000);
     
         this.createUI();
+
+        // Make the director sprite interactive (clickable)
+        this.director.setInteractive({
+            useHandCursor: true,
+            hitArea: new Phaser.Geom.Ellipse(this.director.width / 2, this.director.height / 2, 90, 110), // Adjust these values for ellipse fit
+            hitAreaCallback: Phaser.Geom.Ellipse.Contains // Ellipse shape for hit area
+        });
+
+        // Add event listener for clicking on the director sprite
+        this.director.on('pointerdown', () => {
+            if (this.dialogDisplayed && this.isTyping) {
+                // Skip current typing animation and display full text instantly
+                this.skipCurrentDialogue();
+            } else if (!this.dialogDisplayed) {
+                // Start dialog for the first time
+                this.dialogDisplayed = true;
+                this.createDialogBox();
+                pauseFlag = true; // Pause movement during dialog
+            } else {
+                // If dialog is displayed and not typing, skip to next dialogue
+                this.nextDialogue();
+            }
+        });
     }
 
     update() {
@@ -92,17 +123,10 @@ class MuseumScene extends Phaser.Scene {
 
         this.director.anims.play('director_idle', true);
 
-        // Trigger dialog when player is near the director and dialog hasn't been displayed yet
-        if (Math.abs(this.director.x - this.player.x) < 150 && !this.dialogDisplayed) {
-            this.dialogDisplayed = true;
-            this.createDialogBox();
-            pauseFlag = true;
-        }
-
-        if (cursors.left.isDown && !pauseFlag) {
+        if (this.aKey.isDown && !pauseFlag) {
             this.player.setVelocityX(-160);
             this.player.anims.play('left', true);
-        } else if (cursors.right.isDown && !pauseFlag) {
+        } else if (this.dKey.isDown && !pauseFlag) {
             this.player.setVelocityX(160);
             this.player.anims.play('right', true);
         } else {
@@ -119,17 +143,15 @@ class MuseumScene extends Phaser.Scene {
     }
 
     createDialogBox() {
-        this.add.image(120, 460, 'dialogBox').setOrigin(0);
-
-        const dialogText = this.add.text(140, 470, "", {
+        this.dialogBox = this.add.image(120, 460, 'dialogBox').setOrigin(0);
+        this.dialogText = this.add.text(140, 470, "", {
             fontFamily: 'Arial',
             fontSize: '15px',
             color: '#000',
             wordWrap: { width: 700, useAdvancedWrap: true } // Adjust width for better word wrapping
         });
 
-        // Array of dialog lines to be displayed in sequence
-        const dialogSequence = [
+        this.dialogSequence = [
             { speaker: "Detective", content: "It's worse than we thought. I've been tracking this organization for months now. They're not just after relics—they're after time itself." },
             { speaker: "Museum Manager", content: "Time? What do you mean, detective?" },
             { speaker: "Detective", content: "These aren't random thefts. They’ve been targeting museums all over the world, stealing artifacts from key historical periods. They use them to open time portals—jumping back to the past to steal even more valuable relics from those eras. What’s valuable in the past becomes priceless in the present." },
@@ -137,7 +159,8 @@ class MuseumScene extends Phaser.Scene {
             { speaker: "Detective", content: "Exactly. And they’re getting bolder. We need to stop them before they rewrite history for their own gain." }
         ];
 
-        this.showDialogSequence(dialogText, dialogSequence, 0);
+        // Start the first dialogue sequence
+        this.showDialogSequence(this.dialogText, this.dialogSequence, this.currentDialogueIndex);
     }
 
     showDialogSequence(textObject, sequence, index) {
@@ -147,10 +170,6 @@ class MuseumScene extends Phaser.Scene {
 
             this.typeText(textObject, dialogContent, 50);
 
-            // Set a delay to show the next dialogue after a short pause
-            setTimeout(() => {
-                this.showDialogSequence(textObject, sequence, index + 1);
-            }, dialogContent.length * 50 + 2000);  // Adjust the delay time based on the text length
         } else {
             // End of dialog sequence
             this.textFlag = false;
@@ -158,19 +177,75 @@ class MuseumScene extends Phaser.Scene {
         }
     }
 
+    nextDialogue() {
+        // Move to the next dialogue if available
+        this.currentDialogueIndex++;
+        if (this.currentDialogueIndex < this.dialogSequence.length) {
+            this.showDialogSequence(this.dialogText, this.dialogSequence, this.currentDialogueIndex);
+        } else {
+            // End dialog and resume gameplay
+            this.dialogBox.destroy();
+            this.dialogText.destroy();
+            this.dialogDisplayed = false;
+            pauseFlag = false;
+
+            // Trigger the background and audio change
+            this.changeBackgroundAndAudio();
+        }
+    }
+
+    skipCurrentDialogue() {
+        // Immediately display the entire current text and stop the typing animation
+        this.typingEvent.remove();
+        const currentDialog = this.dialogSequence[this.currentDialogueIndex];
+        const dialogContent = `${currentDialog.speaker}: ${currentDialog.content}`;
+        this.dialogText.setText(dialogContent);
+        this.isTyping = false; // Text is fully displayed now
+    }
+
     typeText(textObject, content, speed) {
         textObject.setText('');
         let i = 0;
+        this.isTyping = true; // Mark that text is being typed
     
-        this.time.addEvent({
+        // Clear any ongoing typing event before starting a new one
+        if (this.typingEvent) {
+            this.typingEvent.remove();
+        }
+    
+        this.typingEvent = this.time.addEvent({
+            delay: speed,
             callback: () => {
-                textObject.setText(content.substr(0, i));
+                textObject.setText(content.slice(0, i));
                 i++;
+                if (i > content.length) {
+                    this.isTyping = false; // Mark typing as complete
+                    this.textFlag = false;
+                    this.typingEvent.remove();
+                }
             },
-            repeat: content.length - 1,
-            delay: speed
+            repeat: content.length - 1
         });
     }
+
+    changeBackgroundAndAudio() {
+        // Check if bg exists before trying to change its texture
+        if (this.bg) {
+            this.bg.setTexture('crime-scene-alert'); // Change background
+        } else {
+            console.warn('Background image is not initialized.'); // Log warning if bg is undefined
+        }
+    
+        // Stop the current audio and play new audio
+        if (this.currentAudio) {
+            this.currentAudio.stop(); // Stop current music
+        }
+    
+        // Play the new background music
+        this.newAudio = this.sound.add('new-music');
+        this.newAudio.play({ loop: true });
+    }
+    
 }
 
 export default MuseumScene;

@@ -55,6 +55,7 @@ class PreloaderScene extends Phaser.Scene {
                     ['menu-bg', 'assets/images/backgrounds/menu-bg.jpg'],
                     ['crime-scene-bg', 'assets/images/backgrounds/museum.jpg'],
                     ['museum-floor-platform', 'assets/images/backgrounds/museum-floor.png'],
+                    ['crime-scene-alert', 'assets/images/backgrounds/crime-scene-alert.png'],
                 ],
                 items: [
                     ['knife', 'assets/images/items/knife.png'],
@@ -74,6 +75,7 @@ class PreloaderScene extends Phaser.Scene {
                 ],
                 music: [
                     ['music', 'assets/audio/music/background-music.mp3'],
+                    ['new-music', 'assets/audio/music/new-audio.mp3'],
                 ],
             }
         };
