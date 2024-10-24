@@ -3,22 +3,24 @@ import SCENES from "../config/gameConstants.js";
 var cursors;
 var pauseFlag = false;
 
-class MuseumScene extends Phaser.Scene {
+class MuseumTheft extends Phaser.Scene {
     constructor() {
-        super({ key: SCENES.MUSEUM_SCENE });
-        this.dialogDisplayed = false; // Ensure dialog appears only once
-        this.textFlag = false; // To control when the game should pause for dialog
+        super({ key: SCENES.MUSEUM_THEFT });
         this.endSceneFlag = false;
     }
 
     preload() {
-        this.load.spritesheet('director_new', 'assets/images/characters/museum_director.png', {
+        this.load.spritesheet('director', 'assets/images/characters/museum_director_right.png', {
             frameWidth: 128,
             frameHeight: 128
         });
         this.load.spritesheet('character', 'assets/images/characters/detective.png', {
             frameWidth: 128, 
             frameHeight: 128 
+        });
+        this.load.spritesheet('portal', 'assets/images/items/portal.png', {
+            frameWidth: 115,
+            frameHeight: 300
         });
 
         this.load.image('dialogBox', 'assets/images/ui/dialogBox.png');
@@ -39,7 +41,14 @@ class MuseumScene extends Phaser.Scene {
 
         this.anims.create({
             key: 'director_idle',
-            frames: this.anims.generateFrameNumbers('director_new', { start: 0, end: 13 }),
+            frames: this.anims.generateFrameNumbers('director', { start: 0, end: 13 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'portal_open',
+            frames: this.anims.generateFrameNumbers('portal', { start: 0, end: 3}),
             frameRate: 10,
             repeat: -1
         });
@@ -52,7 +61,7 @@ class MuseumScene extends Phaser.Scene {
         });
 
         this.anims.create({
-            key: 'detective_idle',
+            key: 'detective_idle_right',
             frames: this.anims.generateFrameNumbers('character', { start: 10, end: 22 }),
             frameRate: 15,
             repeat: -1
@@ -65,35 +74,41 @@ class MuseumScene extends Phaser.Scene {
             repeat: -1
         });
     
-        this.player = this.physics.add.sprite(100, 200, 'character');
-        this.director = this.physics.add.sprite(800, 200, 'director_new');
+        this.player = this.physics.add.sprite(158, 190, 'character');
+        this.director = this.physics.add.sprite(50, 190, 'director');
+
+        this.portal = this.physics.add.sprite(800, 200, 'portal');
     
         this.player.setScale(3);
         this.director.setScale(3);
+        this.portal.setScale(1);
 
         this.player.setCollideWorldBounds(true);
         this.director.setCollideWorldBounds(true);
+        this.portal.setCollideWorldBounds(true);
     
         cursors = this.input.keyboard.createCursorKeys();
 
         this.physics.add.collider(this.player, floor);
         this.physics.add.collider(this.director, floor);
+        this.physics.add.collider(this.portal, floor);
 
         this.cameras.main.fadeIn(1000);
     
         this.createUI();
+        this.createDialogBox();
     }
 
     update() {
-
-        this.director.anims.play('director_idle', true);
-
-        // Trigger dialog when player is near the director and dialog hasn't been displayed yet
-        if (Math.abs(this.director.x - this.player.x) <= 150 && !this.dialogDisplayed) {
-            this.dialogDisplayed = true;
-            this.createDialogBox();
-            pauseFlag = true;
+        if (this.endSceneFlag) {
+            this.cameras.main.fadeOut(1000); 
+            this.cameras.main.once('camerafadeoutcomplete', () => {
+                this.scene.start(SCENES.MUSEUM_THEFT);  // Transition to next scene
+            });
         }
+
+        this.director.anims.play('director_idle_right', true);
+        this.portal.anims.play('portal_open', true);
 
         if (cursors.left.isDown && !pauseFlag) {
             this.player.setVelocityX(-160);
@@ -108,6 +123,7 @@ class MuseumScene extends Phaser.Scene {
     }
 
     createUI() {
+        // Score display
         this.scoreText = this.add.text(16, 16, 'Score: 0', {
             fontSize: '24px',
             fill: '#fff'
@@ -123,8 +139,6 @@ class MuseumScene extends Phaser.Scene {
             color: '#000',
             wordWrap: { width: 700, useAdvancedWrap: true } // Adjust width for better word wrapping
         });
-
-        // Array of dialog lines to be displayed in sequence
         const dialogSequence = [
             { speaker: "Detective", content: "It's worse than we thought. I've been tracking this organization for months now. They're not just after relics—they're after time itself." },
             { speaker: "Museum Manager", content: "Time? What do you mean, detective?" },
@@ -135,7 +149,6 @@ class MuseumScene extends Phaser.Scene {
 
         this.showDialogSequence(dialogText, dialogSequence, 0);
     }
-
     showDialogSequence(textObject, sequence, index) {
         if (index < sequence.length) {
             const currentDialog = sequence[index];
@@ -148,8 +161,7 @@ class MuseumScene extends Phaser.Scene {
                 this.showDialogSequence(textObject, sequence, index + 1);
             }, dialogContent.length * 50 + 2000);  // Adjust the delay time based on the text length
         } else {
-            this.dialogDisplayed = false;
-            this.endScene();
+            this.endSceneFlag = true; // Resume the game after the dialog ends
         }
     }
 
@@ -166,13 +178,6 @@ class MuseumScene extends Phaser.Scene {
             delay: speed
         });
     }
-
-    endScene() {
-        this.cameras.main.fadeOut(1000); 
-        this.cameras.main.once('camerafadeoutcomplete', () => {
-            this.scene.start(SCENES.MUSEUM_THEFT);  // Transition to next scene
-        });
-    }
 }
 
-export default MuseumScene;
+export default MuseumTheft;

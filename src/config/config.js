@@ -5,6 +5,7 @@ import CrimeScene from '../scenes/CrimeScene.js';
 import InventoryScene from '../scenes/Inventory.js';
 import GameOverScene from '../scenes/GameOver.js';
 import MuseumScene from '../scenes/MuseumDirector.js';
+import MuseumTheft from '../scenes/MuseumTheft.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -30,6 +31,7 @@ const config = {
         InventoryScene,
         GameOverScene,
         MuseumScene,
+        MuseumTheft
     ]
 };
 
