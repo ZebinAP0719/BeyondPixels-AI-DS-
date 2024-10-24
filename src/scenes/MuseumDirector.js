@@ -1,6 +1,7 @@
 import SCENES from "../config/gameConstants.js";
 
 var cursors;
+var pauseFlag = false;
 
 class MuseumScene extends Phaser.Scene {
     constructor() {
@@ -16,6 +17,8 @@ class MuseumScene extends Phaser.Scene {
             frameWidth: 128, // Width of each frame
             frameHeight: 128 // Height of each frame
         });
+
+        this.load.image('dialogBox', 'assets/images/ui/dialogBox.png');
     }
 
     create() {
@@ -56,7 +59,7 @@ class MuseumScene extends Phaser.Scene {
 
         this.anims.create({
             key: 'right',
-            frames: this.anims.generateFrameNumbers('character', { start: 10, end: 19 }),
+            frames: this.anims.generateFrameNumbers('character', { start: 23, end: 32 }),
             frameRate: 15,
             repeat: -1
         });
@@ -77,22 +80,34 @@ class MuseumScene extends Phaser.Scene {
 
         this.physics.add.collider(this.player, floor);
         this.physics.add.collider(this.director, floor);
+
+        this.cameras.main.fadeIn(1000);
     
         // Initialize UI
         this.createUI();
     }
 
     update() {
+        if (this.textFlag) {
+            pauseFlag = true;
+        } else {
+            pauseFlag = false;
+        }
+
         this.director.anims.play('director_idle', true);
 
-        if (cursors.left.isDown) {
+        if (this.director.x - this.player.x < 150) {
+            this.createDialogBox();
+            pauseFlag = true;
+        }
+
+        if (cursors.left.isDown && !pauseFlag) {
             this.player.setVelocityX(-160);
             this.player.anims.play('left', true);
-        } else if (cursors.right.isDown) {
+        } else if (cursors.right.isDown && !pauseFlag) {
             this.player.setVelocityX(160);
             this.player.anims.play('right', true);
         } else {
-            // If no key is pressed, stop the animation
             this.player.setVelocityX(0);
             this.player.anims.play('detective_idle', true);
         }
@@ -106,8 +121,41 @@ class MuseumScene extends Phaser.Scene {
         });
     }
 
-    talkToDirector() {
+    createDialogBox() {
+        this.add.image(120, 460, 'dialogBox').setOrigin(0);
 
+        // Create the dialog text with proper word wrap settings and initial empty content
+        const dialogText = this.add.text(140, 470, "", {
+            fontFamily: 'Arial',
+            fontSize: '15px',
+            color: '#000',
+            wordWrap: { width: 50, useAdvancedWrap: true }
+        });
+
+        // Define the content of the dialog
+        const dialogContent = "Hello Detective, I'm glad you're here.";
+
+        // Trigger the typewriter effect for the text
+        this.typeText(dialogText, dialogContent, 50);
+
+        setTimeout(() => {
+            this.textFlag = false;
+        }, 4000);
+    }
+
+    typeText(textObject, content, speed) {
+        textObject.setText(''); // Start with an empty string
+        let i = 0;
+    
+        // Timer to add one character at a time
+        this.time.addEvent({
+            callback: () => {
+                textObject.setText(content.substr(0, i)); // Update the displayed text
+                i++;
+            },
+            repeat: content.length - 1,  // Repeat for each character
+            delay: speed  // Delay between each character (ms)
+        });
     }
 }
 

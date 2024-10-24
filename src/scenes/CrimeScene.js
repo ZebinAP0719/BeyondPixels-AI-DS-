@@ -1,6 +1,7 @@
 import SCENES from '../config/gameConstants.js';
 
 var cursors;
+var pauseFlag = false;
 
 class CrimeScene extends Phaser.Scene {
     constructor() {
@@ -14,9 +15,14 @@ class CrimeScene extends Phaser.Scene {
             frameWidth: 128, // Width of each frame
             frameHeight: 128 // Height of each frame
         });
+
+        this.load.image('dialogBox', 'assets/images/ui/dialogBox.png');
     }
 
     create() {
+        this.cameras.main.setBounds(0, 0, this.worldWidth, this.worldHeight);
+        this.cameras.main.setViewport(0, 0, 1000, 600);
+
         // Add background
         this.add.image(0, 0, 'crime-scene-bg').setOrigin(0);
 
@@ -48,7 +54,7 @@ class CrimeScene extends Phaser.Scene {
 
         this.anims.create({
             key: 'right',
-            frames: this.anims.generateFrameNumbers('character', { start: 23, end: 33}),
+            frames: this.anims.generateFrameNumbers('character', { start: 23, end: 32}),
             frameRate: 15,
             repeat: -1
         });
@@ -63,21 +69,40 @@ class CrimeScene extends Phaser.Scene {
         // Enable arrow key inputs
         cursors = this.input.keyboard.createCursorKeys();
 
-        this.physics.add.collider(this.player, floor)
+        this.physics.add.collider(this.player, floor);
+
+        this.cameras.main.fadeIn(1000);
     
         // Initialize UI
         this.createUI();
+        setTimeout(() => {
+            this.createDialogBox();
+            this.textFlag = true;
+        }, 1000);
+
+        this.sceneTransitionTrigger = false;
     }
 
     update() {
-        if (this.player.x > 600) {
-            this.scene.start(SCENES.MUSEUM_SCENE);
+        if (this.textFlag) {
+            pauseFlag = true;
+        } else {
+            pauseFlag = false;
+        }
+        
+        if (this.player.x >= 600 && !this.sceneTransitionTrigger) {
+            this.sceneTransitionTrigger = true;
+
+            this.cameras.main.fadeOut(1000); 
+            this.cameras.main.once('camerafadeoutcomplete', () => {
+                this.scene.start(SCENES.MUSEUM_SCENE);  // Transition to next scene
+            });
         } 
         // Check for left/right movement
-        if (cursors.left.isDown) {
+        if (cursors.left.isDown && !pauseFlag) {
             this.player.setVelocityX(-160);
             this.player.anims.play('left', true);
-        } else if (cursors.right.isDown) {
+        } else if (cursors.right.isDown && !pauseFlag) {
             this.player.setVelocityX(160);
             this.player.anims.play('right', true);
         } else {
@@ -92,6 +117,34 @@ class CrimeScene extends Phaser.Scene {
         this.scoreText = this.add.text(16, 16, 'Score: 0', {
             fontSize: '24px',
             fill: '#fff'
+        });
+    }
+
+    createDialogBox() {
+        this.add.image(120, 460, 'dialogBox').setOrigin(0);
+
+        const dialogText = this.add.text(140, 470, '', { font: "15px", fill: "#000", wordWarp: { width: 50, useAdvancedWrap: true } });
+        const dialogContent = "I am here at the Museum, I wonder why the Director called me here?. Maybe it's something Important!";
+
+        this.typeText(dialogText, dialogContent, 25);
+
+        setTimeout(() => {
+            this.textFlag = false;
+        }, 4000);
+    }
+
+    typeText(textObject, content, speed) {
+        textObject.setText('');  // Start with an empty string
+        let i = 0;
+    
+        // Timer to add one character at a time
+        this.time.addEvent({
+            callback: () => {
+                textObject.setText(content.substr(0, i));  // Update the displayed text
+                i++;
+            },
+            repeat: content.length - 1,  // Repeat for each character
+            delay: speed  // Delay between each character (ms)
         });
     }
 }
