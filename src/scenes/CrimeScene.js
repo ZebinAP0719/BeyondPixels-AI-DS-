@@ -123,7 +123,7 @@ class CrimeScene extends Phaser.Scene {
     createDialogBox() {
         this.add.image(120, 460, 'dialogBox').setOrigin(0);
 
-        const dialogText = this.add.text(140, 470, '', { font: "15px", fill: "#000", wordWarp: { width: 50, useAdvancedWrap: true } });
+        const dialogText = this.add.text(130, 470, '', { font: "15px", fill: "#000", wordWrap: { width: 460, useAdvancedWrap: true } });
         const dialogContent = "I am here at the Museum, I wonder why the Director called me here?. Maybe it's something Important!";
 
         this.typeText(dialogText, dialogContent, 25);

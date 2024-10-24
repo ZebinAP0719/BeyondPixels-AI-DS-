@@ -5,7 +5,9 @@ var pauseFlag = false;
 
 class MuseumScene extends Phaser.Scene {
     constructor() {
-        super({ key: SCENES.MUSEUM_SCENE});
+        super({ key: SCENES.MUSEUM_SCENE });
+        this.dialogDisplayed = false; // Ensure dialog appears only once
+        this.textFlag = false; // To control when the game should pause for dialog
     }
 
     preload() {
@@ -14,8 +16,8 @@ class MuseumScene extends Phaser.Scene {
             frameHeight: 128
         });
         this.load.spritesheet('character', 'assets/images/characters/detective.png', {
-            frameWidth: 128, // Width of each frame
-            frameHeight: 128 // Height of each frame
+            frameWidth: 128, 
+            frameHeight: 128 
         });
 
         this.load.image('dialogBox', 'assets/images/ui/dialogBox.png');
@@ -27,11 +29,9 @@ class MuseumScene extends Phaser.Scene {
         const floor = this.physics.add.staticGroup();
         const platformWidth = this.textures.get('museum-floor-platform').getSourceImage().width;
 
-        // Calculate how many platforms are needed to cover the scene width
         const sceneWidth = this.scale.width;
         const numPlatforms = Math.ceil(sceneWidth / platformWidth);
     
-        // Create and position each platform
         for (let i = 0; i <= numPlatforms; i++) {
             floor.create(i * platformWidth, 501, 'museum-floor-platform').setScale(1).refreshBody();
         }
@@ -64,18 +64,15 @@ class MuseumScene extends Phaser.Scene {
             repeat: -1
         });
     
-        // Create the character sprite
-        this.player = this.physics.add.sprite(100, 200, 'character'); // Make sure sprite key matches
+        this.player = this.physics.add.sprite(100, 200, 'character');
         this.director = this.physics.add.sprite(800, 200, 'director');
     
-        // Ensure the sprite has proper scaling and physics properties
         this.player.setScale(3);
         this.director.setScale(3);
 
         this.player.setCollideWorldBounds(true);
-        this.director.setCollideWorldBounds(true)
+        this.director.setCollideWorldBounds(true);
     
-        // Enable arrow key inputs
         cursors = this.input.keyboard.createCursorKeys();
 
         this.physics.add.collider(this.player, floor);
@@ -83,7 +80,6 @@ class MuseumScene extends Phaser.Scene {
 
         this.cameras.main.fadeIn(1000);
     
-        // Initialize UI
         this.createUI();
     }
 
@@ -96,7 +92,9 @@ class MuseumScene extends Phaser.Scene {
 
         this.director.anims.play('director_idle', true);
 
-        if (this.director.x - this.player.x < 150) {
+        // Trigger dialog when player is near the director and dialog hasn't been displayed yet
+        if (Math.abs(this.director.x - this.player.x) < 150 && !this.dialogDisplayed) {
+            this.dialogDisplayed = true;
             this.createDialogBox();
             pauseFlag = true;
         }
@@ -114,7 +112,6 @@ class MuseumScene extends Phaser.Scene {
     }
 
     createUI() {
-        // Score display
         this.scoreText = this.add.text(16, 16, 'Score: 0', {
             fontSize: '24px',
             fill: '#fff'
@@ -124,37 +121,54 @@ class MuseumScene extends Phaser.Scene {
     createDialogBox() {
         this.add.image(120, 460, 'dialogBox').setOrigin(0);
 
-        // Create the dialog text with proper word wrap settings and initial empty content
         const dialogText = this.add.text(140, 470, "", {
             fontFamily: 'Arial',
             fontSize: '15px',
             color: '#000',
-            wordWrap: { width: 50, useAdvancedWrap: true }
+            wordWrap: { width: 700, useAdvancedWrap: true } // Adjust width for better word wrapping
         });
 
-        // Define the content of the dialog
-        const dialogContent = "Hello Detective, I'm glad you're here.";
+        // Array of dialog lines to be displayed in sequence
+        const dialogSequence = [
+            { speaker: "Detective", content: "It's worse than we thought. I've been tracking this organization for months now. They're not just after relics—they're after time itself." },
+            { speaker: "Museum Manager", content: "Time? What do you mean, detective?" },
+            { speaker: "Detective", content: "These aren't random thefts. They’ve been targeting museums all over the world, stealing artifacts from key historical periods. They use them to open time portals—jumping back to the past to steal even more valuable relics from those eras. What’s valuable in the past becomes priceless in the present." },
+            { speaker: "Museum Manager", content: "That’s impossible! You're telling me they can... time travel?!" },
+            { speaker: "Detective", content: "Exactly. And they’re getting bolder. We need to stop them before they rewrite history for their own gain." }
+        ];
 
-        // Trigger the typewriter effect for the text
-        this.typeText(dialogText, dialogContent, 50);
+        this.showDialogSequence(dialogText, dialogSequence, 0);
+    }
 
-        setTimeout(() => {
+    showDialogSequence(textObject, sequence, index) {
+        if (index < sequence.length) {
+            const currentDialog = sequence[index];
+            const dialogContent = `${currentDialog.speaker}: ${currentDialog.content}`;
+
+            this.typeText(textObject, dialogContent, 50);
+
+            // Set a delay to show the next dialogue after a short pause
+            setTimeout(() => {
+                this.showDialogSequence(textObject, sequence, index + 1);
+            }, dialogContent.length * 50 + 2000);  // Adjust the delay time based on the text length
+        } else {
+            // End of dialog sequence
             this.textFlag = false;
-        }, 4000);
+            pauseFlag = false; // Resume the game after the dialog ends
+        }
     }
 
     typeText(textObject, content, speed) {
-        textObject.setText(''); // Start with an empty string
+        textObject.setText('');
         let i = 0;
     
-        // Timer to add one character at a time
         this.time.addEvent({
             callback: () => {
-                textObject.setText(content.substr(0, i)); // Update the displayed text
+                textObject.setText(content.substr(0, i));
                 i++;
             },
-            repeat: content.length - 1,  // Repeat for each character
-            delay: speed  // Delay between each character (ms)
+            repeat: content.length - 1,
+            delay: speed
         });
     }
 }

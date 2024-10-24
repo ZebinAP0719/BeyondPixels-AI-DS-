@@ -16,8 +16,10 @@ class MainMenuScene extends Phaser.Scene {
 
         // Add title
         const title = this.add.text(500, 100, 'Detective Game', {
+            fontFamily:'san-serif',
             fontSize: '64px',
-            fill: '#ffffff',
+            fill: 'black',
+            backgroundColor:'gold',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
